@@ -1,7 +1,7 @@
 import React from 'react';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import styled from 'styled-components';
-import { Card, CardContent, CardMedia, IconButton, Typography, Divider } from '@material-ui/core';
+import { Card, CardContent, IconButton, Typography, Divider } from '@material-ui/core';
 // import SkipPreviousIcon from '@material-ui/icons/SkipPrevious';
 import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 import PauseIcon from '@material-ui/icons/Pause';

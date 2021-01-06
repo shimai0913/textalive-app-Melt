@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 // import { Transition } from 'react-transition-group';
 import { Player } from "textalive-app-api";
@@ -48,111 +48,86 @@ export const LyricTypography = styled(Typography)`
 `;
 
 const App = () => {
+  const [player, setPlayer] = useState(null);
+  const [app, setApp] = useState(null);
+  const [artist, setArtist] = useState(false);
+  const [title, setTitle] = useState(false);
+  const [lyrics, setLyrics] = useState([]);
+  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
+  const [errorState, setErrorState] = useState(false);
+  const [mediaElement, setMediaElement] = useState(null);
+
+  const MediaBox = useMemo(() => <div className="media" ref={setMediaElement} />, [])
+  let b,c;
   // const songUrl = 'https://www.youtube.com/watch?v=PqJNc9KVIZE' // Tell Your World
   // const songUrl = 'https://www.youtube.com/watch?v=kp-plPYAPq8' // ロミオとシンデレラ
   // const songUrl = 'https://www.youtube.com/watch?v=o1jAMSQyVPc' // メルト
   const songUrl = 'https://www.youtube.com/watch?v=shs0rAiwsGQ' // 千本桜
-  const [artist, setArtist] = useState(false);
-  const [title, setTitle] = useState(false);
-  const [videoState, setVideoState] = useState(false);
-  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
-  const [lyrics, setLyrics] = useState([]);
-  const [errorState, setErrorState] = useState(false);
-  // const player = new Player({ app: true });
-  const [player, setPlayer] = useState(new Player({ app: true, mediaBannerPosition: null }));
-
-  let b,c;
-
-  const requestPlay = () => {
-    player.requestPlay();
-    setIsPlayingVideo(true);
-  }
-
-  const requestPause = () => {
-    player.requestPause();
-    setIsPlayingVideo(false);
-  }
-
-  const requestStop = () => {
-    player.requestStop();
-    setIsPlayingVideo(false);
-    resetChars();
-  }
-
-  const resetChars = () => {
-    c = null;
-    setLyrics([]);
-  }
-
-  const newChar = (currentChar) => {
-    // 品詞 (part-of-speech)
-    // https://developer.textalive.jp/packages/textalive-app-api/interfaces/iword.html#pos
-    let noun, lastChar;
-    if (
-      currentChar.parent.pos === "N" ||
-      currentChar.parent.pos === "PN"
-      // currentChar.parent.pos === "X"
-    ) {
-      noun = true
-    } else {
-      noun = false
-    }
-    if (currentChar.parent.parent.lastChar === currentChar) {
-      lastChar = true
-    } else {
-      lastChar = false
-    }
-    setLyrics(lyrics => [...lyrics, { char: currentChar.text, noun: noun, lastChar: lastChar}])
-  }
 
   useEffect(() => {
-    player.addListener({
+    // if (typeof window === "undefined" || !mediaElement) {
+    //   return;
+    // }
+
+    const player = new Player({ app: {
+      appName: "mikumiku",
+      appAuthor: "Shotaro Shimai",
+    }, mediaElement });
+
+    const eventListner = {
       // APIの準備ができたら呼ばれる
       onAppReady: (app) => {
-        // console.log(app.songUrl)
-        if (app.managed) {
-          // ホストが存在する
-          console.log('App Ready');
-        } else {
-          console.log('App not Ready');
+        console.log("--- AppReady ---");
+        console.log("managed:", app.managed);
+        console.log("host:", app.host);
+        console.log("song url:", app.songUrl);
+        if (!app.songUrl) {
           player.createFromSongUrl(songUrl);
         }
+        setApp(app);
       },
-
+      // 楽曲情報読み込み完了後、呼ばれる
+      // この時点ではrequestPlay()等が実行不能
+      onVideoReady: (v) => {
+        console.log('--- VideoReady ---');
+        console.log("player.data.song:", player.data.song);
+        console.log("player.data.song.name:", player.data.song.name);
+        console.log("player.data.song.artist.name:", player.data.song.artist.name);
+        console.log("player.data.songMap:", player.data.songMap);
+        // let c = player.video.firstChar;
+        // while (c && c.next) {
+        //   c.animate = (now, u) => {
+        //     if (u.startTime <= now && u.endTime > now) {
+        //       setChar(u.text);
+        //     }
+        //   };
+        //   c = c.next;
+        // }
+      },
+      onTimerReady: () => {
+        console.log('--- TimerReady ---');
+        setTitle(player.data.song.name);
+        setArtist(player.data.song.artist.name);
+        // setVideoState(true)
+        // player.requestPlay();
+      },
+      // 楽曲の再生が始まったら呼ばれる
+      onPlay: () => {
+        console.log('--- Play ---');
+        setIsPlayingVideo(true)
+      },
+      // 楽曲の再生が止まったら呼ばれる
+      onPause: () => {
+        console.log('--- Pause ---');
+        setIsPlayingVideo(false)
+      },
+      // 再生コントロールができるようになったら呼ばれる
+      // これ以降、requestPlay()等が実行可能
       // 楽曲が変わったら呼ばれる
       onAppMediaChange: (songUrl) => {
         console.log("新しい再生楽曲が指定されました:", songUrl);
         resetChars();
       },
-
-      // 楽曲情報読み込み完了後、呼ばれる
-      // この時点ではrequestPlay()等が実行不能
-      onVideoReady: (v) => {
-        console.log('Video Ready');
-        setTitle(player.data.song.name);
-        setArtist(player.data.song.artist.name);
-      },
-
-      // 楽曲の再生が始まったら呼ばれる
-      onPlay: () => {
-        console.log('Video play');
-        setIsPlayingVideo(true)
-      },
-
-      // 楽曲の再生が止まったら呼ばれる
-      onPause: () => {
-        console.log('Video pause');
-        setIsPlayingVideo(false)
-      },
-
-      // 再生コントロールができるようになったら呼ばれる
-      // これ以降、requestPlay()等が実行可能
-      onTimerReady: () => {
-        console.log('TimerReady');
-        setVideoState(true)
-        player.requestPlay();
-      },
-
       // 再生位置の情報が更新されたら呼ばれる
       onTimeUpdate: (position) => {
         // 現在のビート情報を取得
@@ -180,8 +155,66 @@ const App = () => {
           currentChar = currentChar.next;
         }
       },
-    });
-  }, [])
+    }
+
+    player.addListener(eventListner);
+    setPlayer(player);
+    // return () => {
+    //   console.log("--- [app] shutdown ---");
+    //   p.removeListener(playerListener);
+    //   p.dispose();
+    // };
+  }, [mediaElement])
+
+  const requestPlay = () => {
+    if (player) {
+      player.requestPlay();
+      setIsPlayingVideo(true);
+    }
+  }
+
+  const requestPause = () => {
+    if (player) {
+      player.requestPause();
+      setIsPlayingVideo(false);
+    }
+  }
+
+  const requestStop = () => {
+    if (player) {
+      player.requestStop();
+      setIsPlayingVideo(false);
+      resetChars();
+    }
+  }
+
+  const resetChars = () => {
+    c = null;
+    setLyrics([]);
+  }
+
+  const newChar = (currentChar) => {
+    // 品詞 (part-of-speech)
+    // https://developer.textalive.jp/packages/textalive-app-api/interfaces/iword.html#pos
+    let noun, lastChar;
+    if (
+      currentChar.parent.pos === "N" ||
+      currentChar.parent.pos === "PN"
+      // currentChar.parent.pos === "X"
+    ) {
+      noun = true
+    } else {
+      noun = false
+    }
+    if (currentChar.parent.parent.lastChar === currentChar) {
+      lastChar = true
+    } else {
+      lastChar = false
+    }
+    console.log(currentChar.text)
+    setLyrics(lyrics => [...lyrics, { char: currentChar.text, noun: noun, lastChar: lastChar}])
+  }
+
 
   return (
     <Grid
@@ -203,48 +236,45 @@ const App = () => {
         requestPause={requestPause}
         requestStop={requestStop}
       />
-      { !videoState ? (
-        <BlackCurtain />
-      ) : (
-        <>
-          <Container style={{ maxWidth: '95%', paddingTop: '80px' }}>
-            <LyricsContainer>
-            {errorState &&
-              <Typography
+      { !artist && !title && (<BlackCurtain />)}
+      <Container style={{ maxWidth: '95%', paddingTop: '80px' }}>
+        <div style={{ position: 'fixed', bottom: '1%', right: '1%', zIndex: 100 }}>{MediaBox}</div>
+        {/* <MediaBox style={{ position: 'fixed', bottom: '0%', left: '0%', height: 500, width: 500, backgroundColor: 'pink', zIndex: 20 }}/> */}
+        <LyricsContainer>
+        {errorState &&
+          <Typography
+            component="div"
+            style={{
+              height: '45px',
+              fontWeight: 'bold',
+              fontSize: '36px',
+              fontFamily: 'M PLUS 1p',
+              color: '#fcd',
+            }}
+          >
+            歌詞情報が登録されていません。
+          </Typography>
+        }
+          {lyrics.map((item, index) => {
+            return (
+              <LyricTypography
+                key={index}
                 component="div"
                 style={{
                   height: '45px',
                   fontWeight: 'bold',
                   fontSize: '36px',
                   fontFamily: 'M PLUS 1p',
-                  color: '#fcd',
+                  color: item.noun ? '#fcd' : '#aff',
                 }}
               >
-                歌詞情報が登録されていません。
-              </Typography>
-            }
-              {lyrics.map((item, index) => {
-                return (
-                  <LyricTypography
-                    key={index}
-                    component="div"
-                    style={{
-                      height: '45px',
-                      fontWeight: 'bold',
-                      fontSize: '36px',
-                      fontFamily: 'M PLUS 1p',
-                      color: item.noun ? '#fcd' : '#aff',
-                    }}
-                  >
-                    {item.char}{item.lastChar && '　'}
-                  </LyricTypography>
-                )
-              })}
-            </LyricsContainer>
-            { isPlayingVideo && <BeatBar style={{ backgroundColor: "#aff", height: 8 }}/> }
-          </Container>
-        </>
-      )}
+                {item.char}{item.lastChar && '　'}
+              </LyricTypography>
+            )
+          })}
+        </LyricsContainer>
+        { isPlayingVideo && <BeatBar style={{ backgroundColor: "#aff", height: 8 }}/> }
+      </Container>
     </Grid>
   );
 }
