@@ -54,21 +54,17 @@ const App = () => {
   const [title, setTitle] = useState(false);
   const [lyrics, setLyrics] = useState([]);
   const [isPlayingVideo, setIsPlayingVideo] = useState(false);
-  const [errorState, setErrorState] = useState(false);
   const [mediaElement, setMediaElement] = useState(null);
 
   const MediaBox = useMemo(() => <div className="media" ref={setMediaElement} />, [])
   let b,c;
   // const songUrl = 'https://www.youtube.com/watch?v=PqJNc9KVIZE' // Tell Your World
-  // const songUrl = 'https://www.youtube.com/watch?v=kp-plPYAPq8' // ロミオとシンデレラ
   // const songUrl = 'https://www.youtube.com/watch?v=o1jAMSQyVPc' // メルト
-  const songUrl = 'https://www.youtube.com/watch?v=shs0rAiwsGQ' // 千本桜
+  // const songUrl = 'https://www.youtube.com/watch?v=shs0rAiwsGQ' // 千本桜
+  // const songUrl = 'https://www.youtube.com/watch?v=WbdzdkHLt-E' // 初めての恋が終わる時
+  const songUrl = 'https://www.youtube.com/watch?v=poiZSEjQBgw' // ハッピーシンセサイザ
 
   useEffect(() => {
-    // if (typeof window === "undefined" || !mediaElement) {
-    //   return;
-    // }
-
     const player = new Player({ app: {
       appName: "mikumiku",
       appAuthor: "Shotaro Shimai",
@@ -84,7 +80,7 @@ const App = () => {
         if (!app.songUrl) {
           player.createFromSongUrl(songUrl);
         }
-        setApp(app);
+        // setApp(app);
       },
       // 楽曲情報読み込み完了後、呼ばれる
       // この時点ではrequestPlay()等が実行不能
@@ -94,15 +90,6 @@ const App = () => {
         console.log("player.data.song.name:", player.data.song.name);
         console.log("player.data.song.artist.name:", player.data.song.artist.name);
         console.log("player.data.songMap:", player.data.songMap);
-        // let c = player.video.firstChar;
-        // while (c && c.next) {
-        //   c.animate = (now, u) => {
-        //     if (u.startTime <= now && u.endTime > now) {
-        //       setChar(u.text);
-        //     }
-        //   };
-        //   c = c.next;
-        // }
       },
       onTimerReady: () => {
         console.log('--- TimerReady ---');
@@ -137,7 +124,7 @@ const App = () => {
         }
         // 歌詞情報がなければこれで処理を終わる
         if (!player.video.firstChar) {
-          setErrorState(true)
+          // setErrorState(true)
           return;
         }
         // 巻き戻っていたら歌詞表示をリセットする
@@ -160,9 +147,9 @@ const App = () => {
     player.addListener(eventListner);
     setPlayer(player);
     // return () => {
-    //   console.log("--- [app] shutdown ---");
-    //   p.removeListener(playerListener);
-    //   p.dispose();
+    //   console.log("--- shutdown ---");
+    //   player.removeListener(playerListener);
+    //   player.dispose();
     // };
   }, [mediaElement])
 
@@ -239,9 +226,8 @@ const App = () => {
       { !artist && !title && (<BlackCurtain />)}
       <Container style={{ maxWidth: '95%', paddingTop: '80px' }}>
         <div style={{ position: 'fixed', bottom: '1%', right: '1%', zIndex: 100 }}>{MediaBox}</div>
-        {/* <MediaBox style={{ position: 'fixed', bottom: '0%', left: '0%', height: 500, width: 500, backgroundColor: 'pink', zIndex: 20 }}/> */}
         <LyricsContainer>
-        {errorState &&
+        {/* {errorState &&
           <Typography
             component="div"
             style={{
@@ -254,7 +240,7 @@ const App = () => {
           >
             歌詞情報が登録されていません。
           </Typography>
-        }
+        } */}
           {lyrics.map((item, index) => {
             return (
               <LyricTypography
